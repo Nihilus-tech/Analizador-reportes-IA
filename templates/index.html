@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Reportes con IA</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        nav {
+            padding: 20px 40px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-dot { width: 10px; height: 10px; background: #E53935; border-radius: 50%; }
+        .nav-title { font-size: 15px; font-weight: 600; letter-spacing: 0.05em; color: #fff; }
+        .nav-badge {
+            margin-left: auto; font-size: 11px; color: #1565C0;
+            border: 1px solid #1565C0; padding: 3px 10px;
+            border-radius: 20px; letter-spacing: 0.08em;
+        }
+
+        .hero { text-align: center; padding: 80px 40px 40px; }
+        .hero-eyebrow { font-size: 11px; letter-spacing: 0.2em; color: #E53935; text-transform: uppercase; margin-bottom: 20px; }
+        .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; line-height: 1.1; color: #fff; margin-bottom: 16px; }
+        .hero h1 span { color: #1565C0; }
+        .hero p { font-size: 16px; color: #666; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+        .upload-container { max-width: 600px; margin: 50px auto; padding: 0 20px; width: 100%; }
+
+        .drop-zone {
+            border: 1.5px dashed #2a2a2a; border-radius: 16px;
+            padding: 60px 40px; text-align: center; cursor: pointer;
+            transition: all 0.3s ease; background: #111; position: relative;
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #E53935; background: #150f0f; }
+        .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .drop-icon { width: 48px; height: 48px; margin: 0 auto 20px; background: #1a1a1a; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .drop-title { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+        .drop-sub { font-size: 13px; color: #444; }
+        .drop-sub span { color: #E53935; }
+
+        .file-selected { display: none; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 16px 20px; margin-top: 16px; align-items: center; gap: 14px; }
+        .file-selected.visible { display: flex; }
+        .file-icon { font-size: 24px; }
+        .file-info { flex: 1; }
+        .file-name { font-size: 14px; font-weight: 500; color: #fff; }
+        .file-size { font-size: 12px; color: #444; margin-top: 2px; }
+        .file-check { color: #4CAF50; font-size: 18px; }
+
+        .btn-analyze {
+            width: 100%; margin-top: 20px; padding: 16px;
+            background: #E53935; color: #fff; border: none;
+            border-radius: 12px; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease;
+            letter-spacing: 0.02em; display: none;
+        }
+        .btn-analyze.visible { display: block; }
+        .btn-analyze:hover { background: #c62828; transform: translateY(-1px); }
+        .btn-analyze:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; transform: none; }
+
+        .progress-box { display: none; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 20px; margin-top: 16px; }
+        .progress-box.visible { display: block; }
+        .progress-label { font-size: 13px; color: #888; margin-bottom: 10px; }
+        .progress-track { background: #1a1a1a; border-radius: 99px; height: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #E53935; border-radius: 99px; transition: width 0.5s ease; width: 0%; }
+        .progress-steps { display: flex; justify-content: space-between; margin-top: 12px; }
+        .step { font-size: 11px; color: #333; transition: color 0.3s; }
+        .step.active { color: #E53935; }
+        .step.done { color: #4CAF50; }
+
+        .error-box { display: none; background: #1a0a0a; border: 1px solid #E53935; border-radius: 12px; padding: 16px 20px; margin-top: 16px; }
+        .error-box.visible { display: block; }
+        .error-box p { font-size: 13px; color: #E53935; }
+
+        .result-box { display: none; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 24px; margin-top: 20px; }
+        .result-box.visible { display: block; }
+        .result-box h3 { font-size: 13px; color: #1565C0; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+        .result-box p { font-size: 14px; color: #888; line-height: 1.6; }
+
+        .historial-item {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .historial-item:hover { border-color: #1565C0; }
+        .historial-header { cursor: pointer; }
+        .historial-fecha { font-size: 11px; color: #444; margin-bottom: 4px; }
+        .historial-nombre { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .historial-meta { font-size: 12px; color: #555; }
+        .historial-toggle { font-size: 11px; color: #1565C0; margin-top: 6px; }
+        .historial-detalle { display: none; margin-top: 16px; border-top: 1px solid #1a1a1a; padding-top: 16px; }
+
+        footer { margin-top: auto; padding: 30px 40px; text-align: center; font-size: 12px; color: #2a2a2a; border-top: 1px solid #111; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-dot"></div>
+    <span class="nav-title">ANALIZADOR DE REPORTES</span>
+    <span class="nav-badge">IA · BETA</span>
+    <div style="margin-left:auto; display:flex; align-items:center; gap:16px;">
+        <span style="font-size:12px; color:#444;">
+            👤 {{ current_user.username }}
+        </span>
+        {% if current_user.es_admin() %}
+        <a href="/admin"
+            style="font-size:12px; color:#E53935; text-decoration:none;
+            border:1px solid #E53935; padding:4px 12px; border-radius:20px;">
+            Panel Admin
+        </a>
+        {% endif %}
+        <a href="/logout"
+            style="font-size:12px; color:#555; text-decoration:none; transition:color 0.2s;"
+            onmouseover="this.style.color='#fff'"
+            onmouseout="this.style.color='#555'">
+            Cerrar sesion
+        </a>
+    </div>
+</nav>
+
+<section class="hero">
+    <p class="hero-eyebrow">Powered by Groq + LLaMA</p>
+    <h1>Tu reporte, <span>analizado</span><br>en segundos</h1>
+    <p>Sube un archivo Excel o CSV y obtén insights automaticos, tendencias y recomendaciones generadas por IA.</p>
+</section>
+
+<div class="upload-container">
+
+    <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+        <div class="drop-icon">📊</div>
+        <p class="drop-title">Arrastra tu archivo aqui</p>
+        <p class="drop-sub">o <span>haz clic para seleccionar</span></p>
+        <p class="drop-sub" style="margin-top:8px">CSV · XLSX · XLS · Max 15MB</p>
+    </div>
+
+    <div class="file-selected" id="fileSelected">
+        <span class="file-icon">📄</span>
+        <div class="file-info">
+            <p class="file-name" id="fileName">—</p>
+            <p class="file-size" id="fileSize">—</p>
+        </div>
+        <span class="file-check">✓</span>
+    </div>
+
+    <div class="error-box" id="errorBox">
+        <p id="errorText">—</p>
+    </div>
+
+    <button class="btn-analyze" id="btnAnalyze" onclick="uploadFile()">
+        Analizar con IA →
+    </button>
+
+    <div class="progress-box" id="progressBox">
+        <p class="progress-label" id="progressLabel">Iniciando...</p>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-steps">
+            <span class="step" id="step1">📂 Leyendo</span>
+            <span class="step" id="step2">📊 Analizando</span>
+            <span class="step" id="step3">🤖 IA</span>
+            <span class="step" id="step4">✅ Listo</span>
+        </div>
+    </div>
+
+    <div id="sheetSelector" style="display:none; background:#111; border:1px solid #1e1e1e; border-radius:12px; padding:16px 20px; margin-top:16px;">
+        <p style="font-size:13px; color:#888; margin-bottom:10px;">
+            Este archivo tiene varias hojas. Selecciona cual analizar:
+        </p>
+        <select id="sheetSelect" style="width:100%; padding:10px; background:#1a1a1a; color:#fff; border:1px solid #2a2a2a; border-radius:8px; font-size:14px; margin-bottom:10px;">
+        </select>
+        <button onclick="analizarHojaSeleccionada()"
+            style="width:100%; padding:12px; background:#1565C0; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:8px;">
+            Analizar esta hoja →
+        </button>
+        <button onclick="analizarTodasLasHojas()"
+            style="width:100%; padding:12px; background:transparent; color:#E53935; border:1px solid #E53935; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+            Analizar todas las hojas en conjunto →
+        </button>
+    </div>
+
+    <div class="result-box" id="resultBox">
+        <h3>Resumen del archivo</h3>
+        <p id="resultText"></p>
+
+        <div id="insightsBox" style="margin-top:20px; display:none">
+            <h3 style="color:#E53935; margin-bottom:12px; font-size:13px; letter-spacing:0.1em; text-transform:uppercase;">Analisis con IA</h3>
+            <p id="insightsText" style="white-space:pre-wrap; line-height:1.8; color:#ccc; font-size:14px;"></p>
+        </div>
+
+        <div id="chartBox" style="display:none; margin-top:24px;">
+            <h3 style="color:#1565C0; font-size:13px; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:16px;">Visualizacion de Datos</h3>
+            <canvas id="miGrafica" style="max-height:300px;"></canvas>
+        </div>
+
+        <button id="btnPDF" onclick="descargarPDF()"
+            style="display:none; margin-top:20px; width:100%; padding:14px;
+            background:transparent; color:#1565C0;
+            border:1.5px solid #1565C0; border-radius:12px;
+            font-size:15px; font-weight:600; cursor:pointer; transition:all 0.2s ease;"
+            onmouseover="this.style.background='#1565C0';this.style.color='#fff'"
+            onmouseout="this.style.background='transparent';this.style.color='#1565C0'">
+            Descargar Reporte PDF
+        </button>
+    </div>
+
+</div>
+
+<!-- HISTORIAL -->
+<div class="upload-container" style="margin-top:0; padding-bottom:40px;">
+    <div id="historialBox" style="display:none;">
+        <h3 style="font-size:13px; color:#444; letter-spacing:0.1em;
+            text-transform:uppercase; margin-bottom:16px;">
+            Ultimos Analisis
+        </h3>
+        <div id="historialLista"></div>
+    </div>
+</div>
+
+<footer>Analizador de Reportes con IA · Construido con Flask + Pandas + Groq</footer>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileSelected = document.getElementById('fileSelected');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const progressBox = document.getElementById('progressBox');
+    const resultBox = document.getElementById('resultBox');
+    const errorBox = document.getElementById('errorBox');
+
+    let datosAnalisis = null;
+    let miChart = null;
+    const MAX_SIZE_MB = 15;
+
+    fileInput.addEventListener('change', () => showFile(fileInput.files[0]));
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) { fileInput.files = e.dataTransfer.files; showFile(file); }
+    });
+
+    function showFile(file) {
+        if (!file) return;
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            mostrarError(`El archivo pesa ${(file.size/1024/1024).toFixed(1)}MB. El limite es ${MAX_SIZE_MB}MB.`);
+            return;
+        }
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['csv','xlsx','xls'].includes(ext)) {
+            mostrarError('Formato no valido. Solo se aceptan archivos CSV, XLSX o XLS.');
+            return;
+        }
+        ocultarError();
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+        fileSelected.classList.add('visible');
+        btnAnalyze.classList.add('visible');
+    }
+
+    function mostrarError(msg) {
+        document.getElementById('errorText').textContent = '⚠️ ' + msg;
+        errorBox.classList.add('visible');
+        fileSelected.classList.remove('visible');
+        btnAnalyze.classList.remove('visible');
+    }
+
+    function ocultarError() {
+        errorBox.classList.remove('visible');
+    }
+
+    function setProgreso(porcentaje, label, stepActivo) {
+        document.getElementById('progressFill').style.width = porcentaje + '%';
+        document.getElementById('progressLabel').textContent = label;
+        ['step1','step2','step3','step4'].forEach((id, i) => {
+            const el = document.getElementById(id);
+            el.className = 'step';
+            if (i + 1 < stepActivo) el.classList.add('done');
+            if (i + 1 === stepActivo) el.classList.add('active');
+        });
+    }
+
+    
+
+    async function uploadFile() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        btnAnalyze.disabled = true;
+        resultBox.classList.remove('visible');
+        ocultarError();
+        progressBox.classList.add('visible');
+
+        setProgreso(15, 'Leyendo archivo...', 1);
+        await esperar(400);
+        setProgreso(35, 'Analizando datos con Pandas...', 2);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const fetchPromise = fetch('/analyze', { method: 'POST', body: formData });
+            await esperar(800);
+            setProgreso(65, 'Generando insights con IA...', 3);
+
+            const res = await fetchPromise;
+            const data = await res.json();
+
+             if (data.error) {
+                progressBox.classList.remove('visible');
+                mostrarError(data.error);
+                btnAnalyze.disabled = false;
+                return;
+            }
+
+            setProgreso(100, 'Analisis completado', 4);
+            await esperar(500);
+            progressBox.classList.remove('visible');
+
+            datosAnalisis = data;
+            document.getElementById('resultText').textContent = data.message || '';
+            resultBox.classList.add('visible');
+
+            // Selector de hojas
+            if (data.sheets && data.sheets.length > 1) {
+                const selector = document.getElementById('sheetSelector');
+                const select = document.getElementById('sheetSelect');
+                select.innerHTML = '';
+                data.sheets.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    if (String(s) === String(data.sheet_actual)) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                selector.style.display = 'block';
+            }
+
+            if (data.insights) {
+                document.getElementById('insightsText').textContent = data.insights;
+                document.getElementById('insightsBox').style.display = 'block';
+            }
+
+            if (data.datos && data.datos.estadisticas && Object.keys(data.datos.estadisticas).length > 0) {
+                generarGrafica(data);
+            }
+
+            document.getElementById('btnPDF').style.display = 'block';
+            cargarHistorial();
+
+        } catch(e) {
+            progressBox.classList.remove('visible');
+            mostrarError('Error al procesar la respuesta del servidor: ' + e.message);
+        }
+
+        btnAnalyze.disabled = false;
+    }
+
+
+
+
+    function esperar(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function generarGrafica(datos) {
+        const stats = datos.datos.estadisticas;
+        const labels = Object.keys(stats);
+        const promedios = labels.map(k => stats[k].promedio);
+        const maximos = labels.map(k => stats[k].maximo);
+
+        document.getElementById('chartBox').style.display = 'block';
+        if (miChart) miChart.destroy();
+
+        const ctx = document.getElementById('miGrafica').getContext('2d');
+        miChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Promedio', data: promedios, backgroundColor: 'rgba(21,101,192,0.8)', borderRadius: 6 },
+                    { label: 'Maximo', data: maximos, backgroundColor: 'rgba(229,57,53,0.8)', borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#ccc', font: { size: 12 } } } },
+                scales: {
+                    x: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } },
+                    y: { ticks: { color: '#888' }, grid: { color: '#1a1a1a' } }
+                }
+            }
+        });
+    }
+
+    async function descargarPDF() {
+        if (!datosAnalisis) return;
+
+        const btn = document.getElementById('btnPDF');
+        btn.textContent = 'Generando PDF...';
+        btn.disabled = true;
+
+        try {
+            const imagenGrafica = miChart ? miChart.toBase64Image() : null;
+            const res = await fetch('/export/pdf', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({...datosAnalisis, grafica: imagenGrafica})
+            });
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fecha = new Date().toISOString().slice(0,19).replace(/[:T]/g, '-');
+            a.download = `reporte_${fecha}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+        } catch(e) {
+            mostrarError('Error al generar el PDF. Intenta de nuevo.');
+        }
+
+        btn.textContent = 'Descargar Reporte PDF';
+        btn.disabled = false;
+    }
+
+    async function cargarHistorial() {
+        try {
+            const res = await fetch('/historial');
+            const data = await res.json();
+
+            if (data.length === 0) return;
+
+            const box = document.getElementById('historialBox');
+            const lista = document.getElementById('historialLista');
+            box.style.display = 'block';
+            lista.innerHTML = '';
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'historial-item';
+                div.innerHTML = `
+                    <div class="historial-header" onclick="toggleReporte('${item.id}')">
+                        <p class="historial-fecha">${item.fecha}</p>
+                        <p class="historial-nombre">📄 ${item.filename}</p>
+                        <p class="historial-meta">${item.filas} filas · ${item.columnas} columnas</p>
+                        <p class="historial-toggle" id="label_${item.id}">▼ Ver reporte</p>
+                    </div>
+                    <div class="historial-detalle" id="detalle_${item.id}" data-cargado="false">
+                        <p style="font-size:12px; color:#555; text-align:center;">Cargando...</p>
+                    </div>
+                `;
+                lista.appendChild(div);
+            });
+
+        } catch(e) {
+            console.log('Sin historial aun');
+        }
+    }
+
+    async function toggleReporte(itemId) {
+        const detalle = document.getElementById(`detalle_${itemId}`);
+        const label = document.getElementById(`label_${itemId}`);
+
+        if (detalle.style.display === 'block') {
+            detalle.style.display = 'none';
+            label.textContent = '▼ Ver reporte';
+            return;
+        }
+
+        detalle.style.display = 'block';
+        label.textContent = '▲ Cerrar reporte';
+
+        if (detalle.dataset.cargado === 'true') return;
+
+        try {
+            const res = await fetch(`/historial/${itemId}`);
+            const data = await res.json();
+
+            if (data.error) {
+                detalle.innerHTML = '<p style="color:#E53935; font-size:12px;">No se pudo cargar el reporte.</p>';
+                return;
+            }
+
+            detalle.innerHTML = `
+                <p style="font-size:13px; color:#ccc; white-space:pre-wrap; line-height:1.8; margin-bottom:12px;">
+                    ${data.insights}
+                </p>
+                <button onclick="cargarEnPantalla('${itemId}')"
+                    style="padding:10px 16px; background:transparent;
+                    color:#1565C0; border:1px solid #1565C0; border-radius:8px;
+                    font-size:12px; cursor:pointer; width:100%;">
+                    Cargar analisis completo con grafica →
+                </button>
+            `;
+            detalle.dataset.cargado = 'true';
+            detalle._data = data;
+
+        } catch(e) {
+            detalle.innerHTML = '<p style="color:#E53935; font-size:12px;">Error al cargar.</p>';
+        }
+    }
+
+    async function cargarEnPantalla(itemId) {
+        const detalle = document.getElementById(`detalle_${itemId}`);
+        const data = detalle._data;
+        if (!data) return;
+
+        datosAnalisis = {
+            filename: data.filename,
+            datos: data.resultado,
+            insights: data.insights,
+            message: `${data.resultado.filas} filas, ${data.resultado.columnas} columnas`
+        };
+
+        document.getElementById('resultText').textContent = datosAnalisis.message;
+        document.getElementById('resultBox').classList.add('visible');
+
+        if (data.insights) {
+            document.getElementById('insightsText').textContent = data.insights;
+            document.getElementById('insightsBox').style.display = 'block';
+        }
+
+        if (data.resultado && data.resultado.estadisticas) {
+            generarGrafica(datosAnalisis);
+        }
+
+        document.getElementById('btnPDF').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    cargarHistorial();
+
+
+    async function analizarHojaSeleccionada() {
+        const sheet = document.getElementById('sheetSelect').value;
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('sheet_name', sheet);
+
+        progressBox.classList.add('visible');
+        setProgreso(50, 'Analizando hoja seleccionada...', 2);
+
+        try {
+            const res = await fetch('/analyze', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            setProgreso(100, 'Listo', 4);
+            await esperar(400);
+            progressBox.classList.remove('visible');
+
+            datosAnalisis = data;
+            document.getElementById('resultText').textContent = data.message;
+            resultBox.classList.add('visible');
+            
+            // Mostrar selector de hojas si hay multiples
+            if (data.sheets && data.sheets.length > 1) {
+                const selector = document.getElementById('sheetSelector');
+                const select = document.getElementById('sheetSelect');
+                select.innerHTML = data.sheets.map(s =>
+                    `<option value="${s}" ${s === data.sheet_actual ? 'selected' : ''}>${s}</option>`
+                ).join('');
+                selector.style.display = 'block';
+            }
+
+            if (data.insights) {
+                document.getElementById('insightsText').textContent = data.insights;
+                document.getElementById('insightsBox').style.display = 'block';
+            }
+            if (data.datos && data.datos.estadisticas) {
+                generarGrafica(data);
+            }
+            document.getElementById('btnPDF').style.display = 'block';
+
+        } catch(e) {
+            mostrarError('Error al analizar la hoja.');
+            progressBox.classList.remove('visible');
+        }
+    }
+
+    async function analizarTodasLasHojas() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        progressBox.classList.add('visible');
+        setProgreso(30, 'Combinando todas las hojas...', 2);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const fetchPromise = fetch('/analyze/all', { method: 'POST', body: formData });
+            await esperar(600);
+            setProgreso(65, 'Generando insights con IA...', 3);
+
+            const res = await fetchPromise;
+            const data = await res.json();
+
+            if (data.error) {
+                progressBox.classList.remove('visible');
+                mostrarError(data.error);
+                return;
+            }
+
+            setProgreso(100, 'Analisis completado', 4);
+            await esperar(400);
+            progressBox.classList.remove('visible');
+
+            datosAnalisis = data;
+            document.getElementById('resultText').textContent = data.message;
+            resultBox.classList.add('visible');
+            document.getElementById('sheetSelector').style.display = 'none';
+
+            if (data.insights) {
+                document.getElementById('insightsText').textContent = data.insights;
+                document.getElementById('insightsBox').style.display = 'block';
+            }
+
+            if (data.datos && data.datos.estadisticas && Object.keys(data.datos.estadisticas).length > 0) {
+                generarGrafica(data);
+            }
+
+            document.getElementById('btnPDF').style.display = 'block';
+            cargarHistorial();
+
+        } catch(e) {
+            progressBox.classList.remove('visible');
+            mostrarError('Error al analizar todas las hojas: ' + e.message);
+        }
+    }
+
+</script>
+
+</body>
+</html>

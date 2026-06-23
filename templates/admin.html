@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador — Analizador IA</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+
+        nav {
+            padding: 18px 40px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-dot { width: 10px; height: 10px; background: #E53935; border-radius: 50%; }
+        .nav-title { font-size: 15px; font-weight: 600; letter-spacing: 0.05em; color: #fff; }
+        .nav-badge {
+            font-size: 11px; color: #E53935;
+            border: 1px solid #E53935; padding: 3px 10px;
+            border-radius: 20px; letter-spacing: 0.08em;
+        }
+        .nav-links { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+        .nav-links a {
+            font-size: 13px; color: #555; text-decoration: none;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #fff; }
+        .nav-links a.active { color: #1565C0; }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+        h2 {
+            font-size: 11px; color: #444; letter-spacing: 0.15em;
+            text-transform: uppercase; margin-bottom: 16px;
+        }
+
+        /* METRICAS */
+        .metricas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .metrica-card {
+            background: #111;
+            border: 1px solid #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .metrica-card .numero {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .metrica-card .label {
+            font-size: 12px;
+            color: #555;
+        }
+        .metrica-card.azul .numero { color: #1565C0; }
+        .metrica-card.rojo .numero { color: #E53935; }
+
+        /* TABLA DE USUARIOS */
+        .tabla-container {
+            background: #111;
+            border: 1px solid #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #0f0f0f; }
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            color: #444;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #888;
+            border-top: 1px solid #1a1a1a;
+        }
+        td.username { color: #fff; font-weight: 500; }
+        tr:hover td { background: #131313; }
+
+        .badge-rol {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.05em;
+        }
+        .badge-admin { background: #1a0a0a; color: #E53935; border: 1px solid #E53935; }
+        .badge-usuario { background: #0a0f1a; color: #1565C0; border: 1px solid #1565C0; }
+
+        .btn-eliminar {
+            padding: 6px 12px;
+            background: transparent;
+            color: #E53935;
+            border: 1px solid #E53935;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-eliminar:hover { background: #E53935; color: #fff; }
+
+        /* ACTIVIDAD RECIENTE */
+        .actividad-lista { margin-bottom: 40px; }
+        .actividad-item {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .actividad-usuario {
+            font-size: 12px;
+            color: #1565C0;
+            font-weight: 600;
+            min-width: 80px;
+        }
+        .actividad-archivo {
+            font-size: 13px;
+            color: #fff;
+            flex: 1;
+        }
+        .actividad-meta {
+            font-size: 11px;
+            color: #444;
+        }
+
+        /* FORMULARIO CREAR USUARIO */
+        .form-card {
+            background: #111;
+            border: 1px solid #1e1e1e;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+        .field label {
+            display: block;
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .field input, .field select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .field input:focus, .field select:focus { border-color: #1565C0; }
+        .field select option { background: #1a1a1a; }
+
+        .btn-crear {
+            padding: 10px 20px;
+            background: #1565C0;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .btn-crear:hover { background: #0d47a1; }
+
+        .flash-msg {
+            background: #0a1a0a;
+            border: 1px solid #4CAF50;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #4CAF50;
+            margin-bottom: 24px;
+        }
+        .flash-error {
+            background: #1a0a0a;
+            border-color: #E53935;
+            color: #E53935;
+        }
+
+        /* STATS POR USUARIO */
+        .stats-usuario {
+            margin-bottom: 40px;
+        }
+        .stats-item {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .stats-nombre { flex: 1; font-size: 14px; color: #fff; font-weight: 500; }
+        .stats-total {
+            font-size: 22px; font-weight: 700; color: #1565C0;
+            min-width: 40px; text-align: right;
+        }
+        .stats-ultimo { font-size: 11px; color: #444; min-width: 120px; text-align: right; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-dot"></div>
+    <span class="nav-title">ANALIZADOR DE REPORTES</span>
+    <span class="nav-badge">ADMIN</span>
+    <div class="nav-links">
+        <a href="/">Ir al Analizador</a>
+        <a href="/admin" class="active">Panel Admin</a>
+        <a href="/logout">Cerrar Sesion</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="flash-msg">✓ {{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- METRICAS GLOBALES -->
+    <h2>Resumen General</h2>
+    <div class="metricas-grid">
+        <div class="metrica-card azul">
+            <div class="numero">{{ metricas.total_usuarios }}</div>
+            <div class="label">Usuarios activos</div>
+        </div>
+        <div class="metrica-card rojo">
+            <div class="numero">{{ metricas.total_analisis }}</div>
+            <div class="label">Analisis realizados</div>
+        </div>
+        <div class="metrica-card">
+            <div class="numero">{{ usuarios | length }}</div>
+            <div class="label">Cuentas en total</div>
+        </div>
+    </div>
+
+    <!-- ACTIVIDAD POR USUARIO -->
+    {% if metricas.por_usuario %}
+    <h2 style="margin-bottom:16px;">Actividad por Usuario</h2>
+    <div class="stats-usuario">
+        {% for item in metricas.por_usuario %}
+        <div class="stats-item">
+            <span class="stats-nombre">👤 {{ item.username }}</span>
+            <span class="stats-ultimo">Ultimo: {{ item.ultimo }}</span>
+            <span class="stats-total">{{ item.total }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ACTIVIDAD RECIENTE -->
+    {% if metricas.recientes %}
+    <h2 style="margin-bottom:16px;">Ultimos Analisis</h2>
+    <div class="actividad-lista">
+        {% for item in metricas.recientes %}
+        <div class="actividad-item">
+            <span class="actividad-usuario">{{ item.username }}</span>
+            <span class="actividad-archivo">📄 {{ item.filename }}</span>
+            <span class="actividad-meta">{{ item.filas }} filas · {{ item.fecha }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- TABLA DE USUARIOS -->
+    <h2 style="margin-bottom:16px;">Usuarios del Sistema</h2>
+    <div class="tabla-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                    <th>Creado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td class="username">{{ u.username }}</td>
+                    <td>
+                        <span class="badge-rol {% if u.rol == 'admin' %}badge-admin{% else %}badge-usuario{% endif %}">
+                            {{ u.rol }}
+                        </span>
+                    </td>
+                    <td>{{ u.creado_en }}</td>
+                    <td>
+                        {% if u.username != current_user.username %}
+                        <form method="POST" action="/admin/eliminar-usuario/{{ u.id }}"
+                            onsubmit="return confirm('Eliminar a {{ u.username }}?')">
+                            <button type="submit" class="btn-eliminar">Eliminar</button>
+                        </form>
+                        {% else %}
+                        <span style="font-size:11px; color:#333;">Tu cuenta</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- CREAR NUEVO USUARIO -->
+    <h2 style="margin-bottom:16px;">Crear Nuevo Usuario</h2>
+    <div class="form-card">
+        <form method="POST" action="/admin/crear-usuario">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Usuario</label>
+                    <input type="text" name="username" placeholder="nombre_usuario" required>
+                </div>
+                <div class="field">
+                    <label>Contrasena</label>
+                    <input type="password" name="password" placeholder="Contrasena segura" required>
+                </div>
+                <div class="field">
+                    <label>Rol</label>
+                    <select name="rol">
+                        <option value="usuario">Usuario</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-crear">Crear →</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html> 
