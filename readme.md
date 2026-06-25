@@ -9,6 +9,25 @@ Aplicación web que permite a empresas subir archivos Excel o CSV y obtener auto
 
 ---
 
+## 🖥️ Demo
+
+### Inicio de sesión
+![Login](screenshots/Login.png)
+
+### Interfaz principal
+![Interfaz principal](screenshots/Interfaz%201.png)
+
+### Análisis con gráfica y reporte de IA
+![Analisis con grafica](screenshots/Interfaz%202.png)
+
+### Historial de análisis anteriores
+![Historial](screenshots/Interfaz%203.png)
+
+### Panel de administrador
+![Panel Admin](screenshots/Panel%20Admin.png)
+
+---
+
 ## ✨ Funcionalidades
 
 - **Carga de archivos** — Drag & drop de archivos Excel (.xlsx, .xls) y CSV hasta 15MB
@@ -17,23 +36,9 @@ Aplicación web que permite a empresas subir archivos Excel o CSV y obtener auto
 - **Soporte multi-hoja** — Elige qué hoja analizar o analiza todas en conjunto con pd.concat()
 - **Visualización de datos** — Gráficas de barras interactivas con Chart.js
 - **Exportación a PDF** — Reporte profesional con estadísticas, gráfica e insights descargable
-- **Historial por usuario** — Cada usuario ve solo sus análisis anteriores con acordeón
+- **Historial por usuario** — Cada usuario ve solo sus análisis anteriores con acordeón expandible
 - **Autenticación multi-usuario** — Login seguro con Flask-Login y contraseñas encriptadas con Bcrypt
 - **Panel de administrador** — Métricas de uso, gestión de usuarios y actividad reciente
-
----
-
-## 🖥️ Demo
-
-### Interfaz principal
-- Dark mode profesional con paleta negro / rojo `#E53935` / azul `#1565C0`
-- Barra de progreso animada durante el análisis
-- Mensajes de error claros con validación de formato y tamaño
-
-### Panel de administrador
-- Total de usuarios, análisis realizados y actividad por usuario
-- Crear y eliminar usuarios con control de roles (admin / usuario)
-- Últimos análisis globales en tiempo real
 
 ---
 
@@ -63,8 +68,8 @@ Aplicación web que permite a empresas subir archivos Excel o CSV y obtener auto
 ### 1. Clona el repositorio
 
 ```bash
-git clone https://github.com/Nihilus-tech/analizador-reportes-ia.git
-cd analizador-reportes-ia
+git clone https://github.com/Nihilus-tech/Analizador-reportes-IA.git
+cd Analizador-reportes-IA
 ```
 
 ### 2. Crea y activa el entorno Conda
@@ -82,7 +87,13 @@ pip install -r requirements.txt
 
 ### 4. Configura las variables de entorno
 
-Crea un archivo `.env` en la raíz del proyecto:
+Copia el archivo de ejemplo y rellena tus valores:
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env` con tus datos:
 
 ```env
 GROQ_API_KEY=tu_api_key_de_groq_aqui
@@ -119,7 +130,8 @@ analizador-reportes-ia/
 │
 ├── app.py                      # Núcleo Flask — rutas y lógica principal
 ├── requirements.txt            # Dependencias del proyecto
-├── .env                        # Variables de entorno (no incluido en repo)
+├── .env.example                # Ejemplo de variables de entorno
+├── Procfile                    # Configuración para Railway
 │
 ├── modules/
 │   ├── analyzer.py             # Análisis de datos con Pandas
@@ -133,9 +145,7 @@ analizador-reportes-ia/
 │   ├── login.html              # Página de inicio de sesión
 │   └── admin.html              # Panel de administrador
 │
-├── static/
-│   ├── css/                    # Estilos adicionales
-│   └── js/                     # Scripts adicionales
+├── screenshots/                # Capturas de pantalla del proyecto
 │
 ├── uploads/                    # Archivos subidos (ignorado por git)
 └── reports/                    # PDFs, historial JSON y base de datos
@@ -166,7 +176,7 @@ El admin crea las cuentas manualmente desde el panel. No hay registro público.
 
 ## 🔗 Proyectos relacionados
 
-- [agente-ventas-ia](https://github.com/Nihilus-tech/agente-ventas-ia) — Agente RAG de ventas con Flask, LangChain y ChromaDB
+- [agente-ventas-ia](https://github.com/Nihilus-code/agente-ventas-ia) — Agente RAG de ventas con Flask, LangChain y ChromaDB
 
 ---
 
@@ -176,4 +186,4 @@ MIT License — libre para uso personal y comercial.
 
 ---
 
-**Desarrollado por [Nihilus](https://github.com/Nihilus-tech)**
+**Desarrollado por [Nihilus](https://github.com/Nihilus-code)**
